@@ -1,0 +1,2 @@
+http://www.ndesk.org/Options
+license: NDesk.Options is released under the MIT/X11 license. http://www.opensource.org/licenses/mit-license.php
