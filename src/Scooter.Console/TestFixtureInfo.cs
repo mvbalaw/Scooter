@@ -18,12 +18,13 @@ namespace Scooter
 			_class = @class;
 			_configuration = configuration;
 			var methods = @class.GetMethods(BindingFlags.Public | BindingFlags.FlattenHierarchy | BindingFlags.Instance);
-			BeforeEachTest = GetSetupMethod(methods, x => x.IsTestSetupMethod(configuration), "BeforeEachTest");
-			AfterEachTest = GetSetupMethod(methods, x => x.IsTestTeardownMethod(configuration), "AfterEachTest");
-			BeforeFirstTest = GetSetupMethod(methods, x => x.IsFixtureSetupMethod(configuration), "BeforeFirstTest");
-			AfterLastTest = GetSetupMethod(methods, x => x.IsFixtureTeardownMethod(configuration), "AfterLastTest");
-			BeforeFirstFixture = GetSetupMethod(methods, x => x.IsSuiteSetupMethod(configuration), "BeforeFirstFixture");
-			AfterLastFixture = GetSetupMethod(methods, x => x.IsSuiteTeardownMethod(configuration), "AfterLastFixture");
+			BeforeEachTest = GetSetupMethod(methods, x => x.IsRunBeforeEachTestMethod(configuration), "BeforeEachTest");
+			AfterEachSuccessfulTest = GetSetupMethod(methods, x => x.IsRunAfterSuccessfulTestMethod(configuration), "AfterEachSuccessfulTest");
+			AfterEachFailedTest = GetSetupMethod(methods, x => x.IsRunAfterFailedTestMethod(configuration) && x.GetParameters().Length == 2 && x.GetParameters().All(y => y.ParameterType == typeof(string)), "AfterEachFailedTest");
+			BeforeFirstTest = GetSetupMethod(methods, x => x.IsRunBeforeFirstTestInFixtureMethod(configuration), "BeforeFirstTest");
+			AfterLastTest = GetSetupMethod(methods, x => x.IsRunAfterLastTestInFixtureMethod(configuration), "AfterLastTest");
+			BeforeFirstFixture = GetSetupMethod(methods, x => x.IsRunBeforeFirstTestInSuiteMethod(configuration), "BeforeFirstFixture");
+			AfterLastFixture = GetSetupMethod(methods, x => x.IsRunAfterLastTestInSuiteMethod(configuration), "AfterLastFixture");
 			IsIgnore = @class.IsToBeIgnored(configuration);
 			Tests = methods
 				.Where(x => x.IsTestMethod(_configuration))
@@ -92,13 +93,14 @@ namespace Scooter
 			throw new Exception("Test fixture " + _class.FullName + " has multiple methods marked: " + descriptionForError);
 		}
 
-		private void RunAfterEachTest(bool ignore)
+		private void RunAfterEachFailedTest(string testName)
 		{
-			if (ignore)
-			{
-				return;
-			}
-			TryInvoke(AfterEachTest);
+			TryInvoke(AfterEachFailedTest, new object[] { Name, testName });
+		}
+
+		private void RunAfterEachSuccessfulTest()
+		{
+			TryInvoke(AfterEachSuccessfulTest);
 		}
 
 		public void RunAfterLastFixture()
@@ -111,12 +113,8 @@ namespace Scooter
 			TryInvoke(AfterLastTest);
 		}
 
-		private void RunBeforeEachTest(bool ignore)
+		private void RunBeforeEachTest()
 		{
-			if (ignore)
-			{
-				return;
-			}
 			TryInvoke(BeforeEachTest);
 		}
 
@@ -166,13 +164,14 @@ namespace Scooter
 				Console.Write('N');
 				return;
 			}
-			RunBeforeEachTest(false);
+			RunBeforeEachTest();
 			var instance = GetOrCreateInstance();
 
 			try
 			{
 				test.Invoke(instance, null);
 				Console.Write('.');
+				RunAfterEachSuccessfulTest();
 			}
 			catch (Exception exception)
 			{
@@ -181,28 +180,26 @@ namespace Scooter
 					Console.Write('.');
 					return;
 				}
-				RunAfterEachTest(false);
+				RunAfterEachFailedTest(test.Name);
 
 				Console.WriteLine("double checking " + Name + "." + test.Name + " due to: " + exception.InnerException.Message);
-				RunBeforeEachTest(false);
+				RunBeforeEachTest();
 				try
 				{
 					test.Invoke(instance, null);
 					Console.Write('.');
+					RunAfterEachSuccessfulTest();
 				}
 				catch
 				{
 					Console.Write('F');
+					RunAfterEachFailedTest(test.Name);
 					throw;
 				}
 			}
-			finally
-			{
-				RunAfterEachTest(false);
-			}
 		}
 
-		private void TryInvoke(MethodInfo method)
+		private void TryInvoke(MethodInfo method, object[] parameters = null)
 		{
 			if (method == null)
 			{
@@ -212,7 +209,7 @@ namespace Scooter
 			try
 			{
 				var instance = GetOrCreateInstance();
-				method.Invoke(instance, null);
+				method.Invoke(instance, parameters);
 			}
 			catch (Exception exception)
 			{
@@ -221,12 +218,13 @@ namespace Scooter
 			}
 		}
 
-		public MethodInfo AfterEachTest { get; private set; }
+		private MethodInfo AfterEachFailedTest { get; set; }
+		private MethodInfo AfterEachSuccessfulTest { get; set; }
 		public MethodInfo AfterLastFixture { get; private set; }
-		public MethodInfo AfterLastTest { get; private set; }
-		public MethodInfo BeforeEachTest { get; private set; }
+		private MethodInfo AfterLastTest { get; set; }
+		private MethodInfo BeforeEachTest { get; set; }
 		public MethodInfo BeforeFirstFixture { get; private set; }
-		public MethodInfo BeforeFirstTest { get; private set; }
+		private MethodInfo BeforeFirstTest { get; set; }
 		public bool IsIgnore { get; private set; }
 
 		public string Name
