@@ -19,6 +19,7 @@ namespace Scooter
 			_configuration = configuration;
 			var methods = @class.GetMethods(BindingFlags.Public | BindingFlags.FlattenHierarchy | BindingFlags.Instance);
 			BeforeEachTest = GetSetupMethod(methods, x => x.IsRunBeforeEachTestMethod(configuration), "BeforeEachTest");
+			AfterEachTest = GetSetupMethod(methods, x => x.IsRunAfterEachTestMethod(configuration), "AfterEachTest");
 			AfterEachSuccessfulTest = GetSetupMethod(methods, x => x.IsRunAfterSuccessfulTestMethod(configuration), "AfterEachSuccessfulTest");
 			AfterEachFailedTest = GetSetupMethod(methods, x => x.IsRunAfterFailedTestMethod(configuration) && x.GetParameters().Length == 2 && x.GetParameters().All(y => y.ParameterType == typeof(string)), "AfterEachFailedTest");
 			BeforeFirstTest = GetSetupMethod(methods, x => x.IsRunBeforeFirstTestInFixtureMethod(configuration), "BeforeFirstTest");
@@ -93,14 +94,33 @@ namespace Scooter
 			throw new Exception("Test fixture " + _class.FullName + " has multiple methods marked: " + descriptionForError);
 		}
 
+		private void Log(string description, MethodInfo method)
+		{
+			if (method != null && _configuration.Verbose)
+			{
+				Console.WriteLine("-> " + description + ": " + Name + "." + method.Name);
+			}
+		}
+
 		private void RunAfterEachFailedTest(string testName)
 		{
-			TryInvoke(AfterEachFailedTest, new object[] { Name, testName });
+			if (AfterEachFailedTest != null)
+			{
+				Log("RunAfterEachFailedTest", AfterEachFailedTest);
+				TryInvoke(AfterEachFailedTest, new object[] { Name, testName });
+			}
 		}
 
 		private void RunAfterEachSuccessfulTest()
 		{
+			Log("RunAfterEachSuccessfulTest", AfterEachSuccessfulTest);
 			TryInvoke(AfterEachSuccessfulTest);
+		}
+
+		private void RunAfterEachTest()
+		{
+			Log("RunAfterEachTest", AfterEachTest);
+			TryInvoke(AfterEachTest);
 		}
 
 		public void RunAfterLastFixture()
@@ -110,16 +130,19 @@ namespace Scooter
 
 		private void RunAfterLastTest()
 		{
+			Log("RunAfterLastTest", AfterLastTest);
 			TryInvoke(AfterLastTest);
 		}
 
 		private void RunBeforeEachTest()
 		{
+			Log("RunBeforeEachTest", BeforeEachTest);
 			TryInvoke(BeforeEachTest);
 		}
 
 		public void RunBeforeFirstFixture()
 		{
+			Log("RunBeforeFirstFixture", BeforeFirstFixture);
 			RunTest(BeforeFirstFixture, false);
 		}
 
@@ -129,6 +152,7 @@ namespace Scooter
 			{
 				return;
 			}
+			Log("RunBeforeFirstTest", BeforeFirstTest);
 			TryInvoke(BeforeFirstTest);
 		}
 
@@ -157,7 +181,7 @@ namespace Scooter
 			}
 		}
 
-		private void RunTestWithDoubleCheck(MethodBase test, bool ignore)
+		private void RunTestWithDoubleCheck(MethodInfo test, bool ignore)
 		{
 			if (ignore)
 			{
@@ -169,31 +193,39 @@ namespace Scooter
 
 			try
 			{
+				Log("RunTest", test);
 				test.Invoke(instance, null);
 				Console.Write('.');
 				RunAfterEachSuccessfulTest();
+				RunAfterEachTest();
 			}
 			catch (Exception exception)
 			{
 				if (ExceptionIsExpected(test, exception.InnerException))
 				{
 					Console.Write('.');
+					RunAfterEachSuccessfulTest();
+					RunAfterEachTest();
 					return;
 				}
 				RunAfterEachFailedTest(test.Name);
+				RunAfterEachTest();
 
 				Console.WriteLine("double checking " + Name + "." + test.Name + " due to: " + exception.InnerException.Message);
 				RunBeforeEachTest();
 				try
 				{
+					Log("RunTest", test);
 					test.Invoke(instance, null);
 					Console.Write('.');
 					RunAfterEachSuccessfulTest();
+					RunAfterEachTest();
 				}
 				catch
 				{
 					Console.Write('F');
 					RunAfterEachFailedTest(test.Name);
+					RunAfterEachTest();
 					throw;
 				}
 			}
@@ -219,7 +251,8 @@ namespace Scooter
 		}
 
 		private MethodInfo AfterEachFailedTest { get; set; }
-		private MethodInfo AfterEachSuccessfulTest { get; set; }
+		public MethodInfo AfterEachSuccessfulTest { get; private set; }
+		private MethodInfo AfterEachTest { get; set; }
 		public MethodInfo AfterLastFixture { get; private set; }
 		private MethodInfo AfterLastTest { get; set; }
 		private MethodInfo BeforeEachTest { get; set; }

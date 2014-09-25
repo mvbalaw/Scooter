@@ -5,6 +5,12 @@ namespace Scooter
 {
 	public static class MethodInfoExtensions
 	{
+		public static bool IsRunAfterEachTestMethod(this MethodInfo methodInfo, Configuration configuration)
+		{
+			return methodInfo.GetCustomAttributes()
+				.Any(x => x.GetType().Name.Equals(configuration.AfterEachTestAttributeName));
+		}
+
 		public static bool IsRunAfterFailedTestMethod(this MethodInfo methodInfo, Configuration configuration)
 		{
 			return methodInfo.GetCustomAttributes()
