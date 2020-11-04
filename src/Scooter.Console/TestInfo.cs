@@ -30,17 +30,17 @@ namespace Scooter
 		public void SetError(Exception exception1)
 		{
 			IsError = true;
-			Message = exception1.InnerException.Message;
-			StackTrace = exception1.InnerException.ToString();
+			if (exception1.InnerException != null)
+			{
+				Message = exception1.InnerException.Message;
+				StackTrace = exception1.InnerException.ToString();
+			}
 		}
 
 		public bool IsError { get; private set; }
-		public bool IsIgnore { get; private set; }
+		public bool IsIgnore { get; }
 		public string Message { get; private set; }
-		public string Name
-		{
-			get { return _testMethod.Name; }
-		}
+		public string Name => _testMethod.Name;
 		public string StackTrace { get; private set; }
 	}
 }

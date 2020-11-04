@@ -101,7 +101,7 @@ namespace Scooter
 
 			Console.WriteLine("  Not run: {0}, Invalid: {1}, Ignored: {2}, Skipped: {3}",
 				totalIgnored,
-				errors.Count(),
+				errors.Length,
 				totalIgnored,
 				totalIgnored);
 			Console.WriteLine("=================================================");

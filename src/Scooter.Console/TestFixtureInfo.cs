@@ -211,7 +211,9 @@ namespace Scooter
 				RunAfterEachFailedTest(test.Name);
 				RunAfterEachTest();
 
-				Console.WriteLine("double checking " + Name + "." + test.Name + " due to: " + exception.InnerException.Message);
+				if (exception.InnerException != null)
+					Console.WriteLine("double checking " + Name + "." + test.Name + " due to: " +
+					                  exception.InnerException.Message);
 				RunBeforeEachTest();
 				try
 				{
@@ -250,20 +252,17 @@ namespace Scooter
 			}
 		}
 
-		private MethodInfo AfterEachFailedTest { get; set; }
-		public MethodInfo AfterEachSuccessfulTest { get; private set; }
-		private MethodInfo AfterEachTest { get; set; }
-		public MethodInfo AfterLastFixture { get; private set; }
-		private MethodInfo AfterLastTest { get; set; }
-		private MethodInfo BeforeEachTest { get; set; }
-		public MethodInfo BeforeFirstFixture { get; private set; }
-		private MethodInfo BeforeFirstTest { get; set; }
-		public bool IsIgnore { get; private set; }
+		private MethodInfo AfterEachFailedTest { get; }
+		public MethodInfo AfterEachSuccessfulTest { get; }
+		private MethodInfo AfterEachTest { get; }
+		public MethodInfo AfterLastFixture { get; }
+		private MethodInfo AfterLastTest { get; }
+		private MethodInfo BeforeEachTest { get; }
+		public MethodInfo BeforeFirstFixture { get; }
+		private MethodInfo BeforeFirstTest { get; }
+		public bool IsIgnore { get; }
 
-		public string Name
-		{
-			get { return _class.FullName; }
-		}
-		public IEnumerable<TestInfo> Tests { get; private set; }
+		public string Name => _class.FullName;
+		public IEnumerable<TestInfo> Tests { get; }
 	}
 }

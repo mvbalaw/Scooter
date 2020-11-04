@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security;
@@ -20,7 +21,7 @@ namespace Scooter
 			return RunTests(args, configuration);
 		}
 
-		private static int RunTests(string[] args, Configuration configuration)
+		private static int RunTests(IEnumerable<string> args, Configuration configuration)
 		{
 			var fullPaths = configuration.Paths.Select(Path.GetFullPath);
 			var configurationSettings = args.Where(x => !configuration.Paths.Contains(x)).ToArray();
@@ -42,6 +43,7 @@ namespace Scooter
 					var appDomain = AppDomain.CreateDomain("Runner", evidence, domainSetup, new PermissionSet(PermissionState.Unrestricted));
 
 					// Instantiate the Service type in the remote AppDomain and get a handle.
+					// ReSharper disable once AssignNullToNotNullAttribute
 					var testRunner = (ITestRunner)appDomain.CreateInstanceFromAndUnwrap(typeof(TestRunner).Assembly.Location, typeof(TestRunner).FullName);
 
 					var testsFailed = testRunner.ExecuteAssemblyTests(assemblyPath, configurationSettings);
