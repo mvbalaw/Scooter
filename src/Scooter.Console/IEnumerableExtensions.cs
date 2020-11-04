@@ -17,11 +17,11 @@ namespace Scooter
 		public static IEnumerable<T> Shuffle<T>(
 			this IEnumerable<T> source, Random rng)
 		{
-			if (source == null)
+			if (source is null)
 			{
 				throw new ArgumentNullException(nameof(source));
 			}
-			if (rng == null)
+			if (rng is null)
 			{
 				throw new ArgumentNullException(nameof(rng));
 			}

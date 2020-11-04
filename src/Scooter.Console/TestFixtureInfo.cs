@@ -43,11 +43,11 @@ namespace Scooter
 		{
 			var customAttributes = test.CustomAttributes.ToArray();
 			var expectedException = customAttributes.FirstOrDefault(x => x.AttributeType.Name.Equals(_configuration.ExpectedExceptionAttributeName));
-			if (expectedException == null)
+			if (expectedException is null)
 			{
 				return false;
 			}
-			if (expectedException.NamedArguments == null)
+			if (expectedException.NamedArguments is null)
 			{
 				return false;
 			}
@@ -96,7 +96,7 @@ namespace Scooter
 
 		private void Log(string description, MethodInfo method)
 		{
-			if (method != null && _configuration.Verbose)
+			if (!(method is null) && _configuration.Verbose)
 			{
 				Console.WriteLine("-> " + description + ": " + Name + "." + method.Name);
 			}
@@ -104,44 +104,70 @@ namespace Scooter
 
 		private void RunAfterEachFailedTest(string testName)
 		{
-			if (AfterEachFailedTest != null)
+			if (AfterEachFailedTest is null)
 			{
-				Log("RunAfterEachFailedTest", AfterEachFailedTest);
-				TryInvoke(AfterEachFailedTest, new object[] { Name, testName });
+				return;
 			}
+
+			Log("RunAfterEachFailedTest", AfterEachFailedTest);
+			TryInvoke(AfterEachFailedTest, new object[] { Name, testName });
 		}
 
 		private void RunAfterEachSuccessfulTest()
 		{
+			if (AfterEachSuccessfulTest is null)
+			{
+				return;
+			}
 			Log("RunAfterEachSuccessfulTest", AfterEachSuccessfulTest);
 			TryInvoke(AfterEachSuccessfulTest);
 		}
 
 		private void RunAfterEachTest()
 		{
+			if (AfterEachTest is null)
+			{
+				return;
+			}
 			Log("RunAfterEachTest", AfterEachTest);
 			TryInvoke(AfterEachTest);
 		}
 
 		public void RunAfterLastFixture()
 		{
+			if (AfterLastFixture is null)
+			{
+				return;
+			}
 			RunTest(AfterLastFixture, false);
 		}
 
 		private void RunAfterLastTest()
 		{
+			if (AfterLastTest is null)
+			{
+				return;
+			}
 			Log("RunAfterLastTest", AfterLastTest);
 			TryInvoke(AfterLastTest);
 		}
 
 		private void RunBeforeEachTest()
 		{
+			if (BeforeEachTest is null)
+			{
+				return;
+			}
 			Log("RunBeforeEachTest", BeforeEachTest);
 			TryInvoke(BeforeEachTest);
 		}
 
 		public void RunBeforeFirstFixture()
 		{
+			if (BeforeFirstFixture is null)
+			{
+				return;
+			}
 			Log("RunBeforeFirstFixture", BeforeFirstFixture);
 			RunTest(BeforeFirstFixture, false);
 		}
@@ -149,6 +175,11 @@ namespace Scooter
 		private void RunBeforeFirstTest(bool ignore)
 		{
 			if (ignore)
+			{
+				return;
+			}
+
+			if (BeforeFirstTest is null)
 			{
 				return;
 			}
@@ -211,9 +242,11 @@ namespace Scooter
 				RunAfterEachFailedTest(test.Name);
 				RunAfterEachTest();
 
-				if (exception.InnerException != null)
-					Console.WriteLine("double checking " + Name + "." + test.Name + " due to: " +
-					                  exception.InnerException.Message);
+				if (!(exception.InnerException is null))
+				{
+					Console.WriteLine("double checking " + Name + "." + test.Name + " due to: " + exception.InnerException.Message);
+				}
+
 				RunBeforeEachTest();
 				try
 				{
@@ -233,9 +266,9 @@ namespace Scooter
 			}
 		}
 
-		private void TryInvoke(MethodInfo method, object[] parameters = null)
+		private void TryInvoke(MethodBase method, object[] parameters = null)
 		{
-			if (method == null)
+			if (method is null)
 			{
 				return;
 			}

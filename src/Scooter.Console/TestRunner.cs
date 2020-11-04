@@ -124,8 +124,8 @@ namespace Scooter
 
 		private static void RunSuiteSetup(IEnumerable<TestFixtureInfo> fixtures)
 		{
-			var setup = fixtures.SingleOrDefault(x => x.BeforeFirstFixture != null);
-			if (setup == null)
+			var setup = fixtures.SingleOrDefault(x => !(x.BeforeFirstFixture is null));
+			if (setup is null)
 			{
 				return;
 			}
@@ -135,13 +135,13 @@ namespace Scooter
 
 		private static void RunSuiteTeardown(IEnumerable<TestFixtureInfo> fixtures)
 		{
-			var setup = fixtures.SingleOrDefault(x => x.AfterLastFixture != null);
-			if (setup == null)
+			var teardown = fixtures.SingleOrDefault(x => !(x.AfterLastFixture is null));
+			if (teardown is null)
 			{
 				return;
 			}
 
-			setup.RunAfterLastFixture();
+			teardown.RunAfterLastFixture();
 		}
 
 		private void SetConfiguration(string assemblyPath, string[] configurationSettings)
@@ -163,7 +163,7 @@ namespace Scooter
 
 		private static void VerifySuiteSetup(IEnumerable<TestFixtureInfo> fixtures)
 		{
-			var setups = fixtures.Where(x => x.BeforeFirstFixture != null).ToArray();
+			var setups = fixtures.Where(x => !(x.BeforeFirstFixture is null)).ToArray();
 			if (!setups.Any())
 			{
 				return;
@@ -184,7 +184,7 @@ namespace Scooter
 
 		private static void VerifySuiteTeardown(IEnumerable<TestFixtureInfo> fixtures)
 		{
-			var setups = fixtures.Where(x => x.AfterLastFixture != null).ToArray();
+			var setups = fixtures.Where(x => !(x.AfterLastFixture is null)).ToArray();
 			if (!setups.Any())
 			{
 				return;

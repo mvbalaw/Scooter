@@ -30,7 +30,7 @@ namespace Scooter
 		public void SetError(Exception exception1)
 		{
 			IsError = true;
-			if (exception1.InnerException != null)
+			if (!(exception1.InnerException is null))
 			{
 				Message = exception1.InnerException.Message;
 				StackTrace = exception1.InnerException.ToString();
